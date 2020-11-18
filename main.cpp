@@ -1,5 +1,6 @@
 //C++11
 //TODO: add exceptions about relative rule
+//TODO: add elements dictionary
 #include <iostream>
 #include <string>
 #include <cstring>
@@ -7,48 +8,43 @@
 #include <algorithm>
 
 using namespace std;
-
-//I'll be using ushort, 11562 is the max anyway right?
 using ushort = unsigned short int;
 
+
 struct ElectronContainer {
-    //static uint count;
-    vector<char> subShell;
-    vector<ushort> shell, subShellElec;
+    vector<char> subshell;
+    vector<ushort> shell, subshellElec;
+    ushort shellCount = 0;
+    char lastSubShell = ' ';
 
-    //ElectronContainer() {
-    //    count = 0;
-    //}
-
-    ushort size() {
-        return shell.size();
+    void erase(ushort i) {
+        shell.erase(shell.begin() + i);
+        subshell.erase(subshell.begin() + i);
+        subshellElec.erase(subshellElec.begin() + i);
     }
 };
 
 bool IsDigit(const string &str) {
     return all_of(str.begin(), str.end(), ::isdigit);
 }
-//Function to handle the calculating from peak of line.
+
+//Function to handle the calculating from peak of line
 ElectronContainer subCalculate(ushort i, ushort j, ushort& n, ElectronContainer container) {
-    //List of subshell, but it's a string
-    string jAlias = "spdfghiklmnoqrtuvwxyz";
+    string jAlias = "spdfghiklmnoqrtuvwxyz"; //List of subshells
     while (j >= 1) {
         //Add the subshell name (1s, 3d, 6d,...) to the output first
-        container.shell.insert(container.shell.end(), i);
-        container.subShell.insert(container.subShell.end(), jAlias[j-1]);
-        //Maximum electron held by a subshell (s,p,d,...) is 4j - 2
-        ushort max = 4 * j - 2;
-        //If n is bigger than the subshell's max electron, add max to that shell
+        container.shell.push_back(i);
+        container.subshell.push_back(jAlias[j - 1]);
+        ushort max = 4 * j - 2; //Max electron in a subshell
+
         if (n > max) {
             n = n - max;
-            container.subShellElec.insert(container.subShellElec.end(), max);
+            container.subshellElec.push_back(max);
         } else {
-            //Else, when n = or < than max electron, add just n, makes it 0, then return.
-            container.subShellElec.insert(container.subShellElec.end(), n);
-            n = 0;
+            container.subshellElec.push_back(n);
+            n = 0; container.lastSubShell = jAlias[j - 1];
             return container;
         }
-        // Put the TEMPORARY layer "cursor" down to the left.
         i++; j--;
     }
 
@@ -79,12 +75,13 @@ int main(int argc, char *argv[]) {
     }
     //If argument is number only, default behaviour: Sorted output
 
+
     //Check if argument inputted is a number
     if ( (argv[1] == nullptr) || !( IsDigit(argv[1]) ) ) {
         cout << "Error: Invalid input\n";
         return 1;
     }
-    //Get the n value (number of electrons) from argv
+
     ushort n = stoi(argv[1]);
     //Check for upper boundary. 11562 is the maximum with the subshell being z
     if ((n > 11562) || (n < 1)) {
@@ -94,29 +91,57 @@ int main(int argc, char *argv[]) {
 
     //Main algorithm
     ElectronContainer container;
-    //i represents the shell (1, 2, 3, 4,...) and j represents the subshell (s, p, d, f,...)
-    ushort i = 1, j = 1;
+    {
+        //i represents the shell (1, 2, 3, 4,...) and j represents the subshell (s, p, d, f,...)
+        ushort i = 1, j = 1;
 
-    while (n > 0) {
-        //If the start of line is the outermost, call the calculate func then increase the shell count
-        if (j == i) {
-            container = subCalculate(i, j, n, container);
-            i++;
-        } else {
-            //Else increase the subshell count instead
-            container = subCalculate(i, j, n, container);
-            j++;
+        while (n > 0) {
+            //If the start of line is the outermost, call the calculate func then increase the shell count
+            if (j == i) {
+                container = subCalculate(i, j, n, container);
+                i++;
+            } else {
+                //Else increase the subshell count instead
+                container = subCalculate(i, j, n, container);
+                j++;
+            }
         }
     }
 
-    //If -e switch is used, sort the thing
     //TODO
     if (isSorted) {
+        ElectronContainer tempContainer; tempContainer.shellCount = 1;
+        tempContainer.lastSubShell = container.lastSubShell;
+
+        while (!container.shell.empty()) {
+            for (ushort i = 0; i < (ushort)container.shell.size(); i++) {
+                if (container.shell[i] == tempContainer.shellCount) {
+                    //Clean code incoming :)
+                    tempContainer.shell.push_back(container.shell[i]);
+                    tempContainer.subshell.push_back(container.subshell[i]);
+                    tempContainer.subshellElec.push_back(container.subshellElec[i]);
+                    container.erase(i);
+                    i--;
+                }
+            }
+
+            tempContainer.shellCount++;
+        }
+
+        container = tempContainer;
+    } else {
+        for (ushort i = 0; i < (ushort)container.shell.size(); i++) {
+            if (container.shell[i] > container.shellCount) {
+                container.shellCount = container.shell[i];
+            }
+        }
     }
 
     //Return stuff
-    for (ushort f = 0; f < container.size(); f++) {
-        cout << container.shell[f] << container.subShell[f] << container.subShellElec[f] << " ";
+    for (ushort i = 0; i < (ushort)container.shell.size(); i++) {
+        cout << container.shell[i] << container.subshell[i] << container.subshellElec[i] << " ";
     }
-    cout << endl; return 0;
+    cout << endl << "Last subshell is " << container.lastSubShell << endl;
+    cout << "Shell count is " << container.shellCount << endl;
+    return 0;
 }
