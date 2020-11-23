@@ -28,6 +28,7 @@ bool IsDigit(const string &str) {
     return all_of(str.begin(), str.end(), ::isdigit);
 }
 
+/***********************************************************************************************************/
 //Function to handle the calculating from peak of line
 ElectronContainer subCalculate(ushort i, ushort j, ushort& n, ElectronContainer container) {
     string jAlias = "spdfghiklmnoqrtuvwxyz"; //List of subshells
@@ -53,6 +54,7 @@ ElectronContainer subCalculate(ushort i, ushort j, ushort& n, ElectronContainer 
 
 
 int main(int argc, char *argv[]) {
+    /***************************************************************************************************/
     bool isSorted = true;   //True = will sort the result; false = won't, just push everything to stdout
 
     //Arguments handler. Really basic one.
@@ -89,6 +91,8 @@ int main(int argc, char *argv[]) {
         return 0;
     }
 
+    /******************************************************************************************************/
+
     //Main algorithm
     ElectronContainer container;
     {
@@ -108,7 +112,6 @@ int main(int argc, char *argv[]) {
         }
     }
 
-    //TODO
     if (isSorted) {
         ElectronContainer tempContainer; tempContainer.shellCount = 1;
         tempContainer.lastSubShell = container.lastSubShell;
@@ -136,6 +139,8 @@ int main(int argc, char *argv[]) {
             }
         }
     }
+
+    /****************************************************************************************************/
 
     //Return stuff
     for (ushort i = 0; i < (ushort)container.shell.size(); i++) {
